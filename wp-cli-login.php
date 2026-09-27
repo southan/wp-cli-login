@@ -7,35 +7,31 @@ use WP_CLI\Utils;
 class WP_CLI_Login {
 
 	public ?string $user;
+
 	public int $timeout = 30;
 
 	/**
-	 * Log in to WordPress.
-	 *
-	 * Instant, automatic login to any WordPress that WP-CLI has access to.
-	 *
-	 * This command installs a self-destructing MU plugin that listens for a
-	 * unique, secret URL and signs the requesting user into WordPresss.
+	 * Instant WordPress login as any user.
 	 * 
 	 * ## OPTIONS
 	 *
 	 * [<target>...]
-	 * : Log in to WP-CLI alias or remote WordPress (see global parameter --ssh).
+	 * : WP-CLI alias, path, or SSH target (see global parameter --ssh). Defaults to current install.
 	 *
 	 * [--user=<id|login|email>]
 	 * : Log in as specific user. Defaults to first administrator.
 	 *
 	 * [--timeout=<timeout>]
-	 * : Default 30 seconds. Accepts time units e.g. 1d 6h 30m
-	 *
-	 * [--generate]
-	 * : Generate the login script (MU plugin) for manual installation.
+	 * : Time until expiration in seconds or units e.g. 1d 6h 30m
+	 * ---
+	 * default: 30
+	 * ---
 	 *
 	 * [--open]
-	 * : Open the login URL in your system browser. Default true (unless --generate).
+	 * : Automatically open the login URL in your system browser. Default true (unless --generate).
 	 *
 	 * [--url=<url>]
-	 * : Defaults to WordPress URL.
+	 * : Use the <key> placeholder for exact control over the generated login URL.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -49,7 +45,7 @@ class WP_CLI_Login {
 	 *     $ wp login @dev
 	 *
 	 *     # Print login URL instead of opening it & set timeout to 5 minutes
-	 *     $ wp login --no-open --timeout=5m
+	 *     $ wp login --no-open --timeout=300
 	 *     https://example.com/login/ce24f50a0126d75694b3cf2dedb5a64d6f3636cb0ae3d08e2c8c509b511c7acc
 	 *
 	 *     # Generate login script for manual installation
@@ -58,21 +54,21 @@ class WP_CLI_Login {
 	 *     <?php
 	 *     ...
 	 *
-	 *     # Override URL if rewrite not supported (default login URL format)
+	 *     # Use query string i.e. if permalinks not supported
 	 *     $ wp login --url='https://example.com/?login-key=<key>'
 	 *
 	 * @when before_wp_load
 	 */
 	public function __invoke( array $args, array $assoc_args ) : void {
-		$config = Utils\get_runner()->config;
+		$assoc_args['url'] ??= WP_CLI::get_config( 'url' );
 
-		$user = $assoc_args['user'] ?? $config['user'] ?? null;
+		$user = $assoc_args['user'] ?? WP_CLI::get_config( 'user' );
 		$timeout = $assoc_args['timeout'] ?? null;
 		$generate = $assoc_args['generate'] ?? false;
 		$open = $assoc_args['open'] ?? ! $generate;
 
 		if ( $generate && $open ) {
-			WP_CLI::error( '--open is not supported with --generate' );
+			WP_CLI::error( 'You cannot supply --generate and --open at the same time.' );
 		}
 
 		$this->user = $user;
@@ -88,9 +84,9 @@ class WP_CLI_Login {
 					default  => (float) $match[1],
 				};
 			}
-
-			$this->timeout = intval( $timeout );
 		}
+
+		$this->timeout = intval( $timeout );
 
 		$mu_plugin = new MU_Plugin(
 			name: 'Login',
@@ -108,15 +104,11 @@ class WP_CLI_Login {
 			'debug' => 'login',
 		]);
 
-		if ( ! $remotes ) {
-			WP_CLI::error( 'Valid target(s) required.' );
-		}
-
 		foreach ( $remotes as $remote ) {
-			$url = $config['url'] ?? $remote->url();
+			$url = $assoc_args['url'] ?? $remote->get_url();
 
 			if ( ! parse_url( $url, PHP_URL_SCHEME ) ) {
-				$url = "http://$url";
+				$url = 'https://' . ltrim( $url, '/' );
 			}
 
 			if ( ! str_contains( $url, '<key>' ) ) {
@@ -146,7 +138,7 @@ class WP_CLI_Login {
 				WP_CLI::line( $url );
 
 			} elseif ( ! Utils\open( $url ) ) {
-				WP_CLI::warning( "Failed to open '$url'" );
+				WP_CLI::warning( "Failed to open $url" );
 			}
 		}
 	}
@@ -159,7 +151,7 @@ class WP_CLI_Login {
 			$uri .= "?{$url['query']}";
 		}
 
-		$timeout = time() + $this->timeout;
+		$timeout = $this->timeout ? time() + $this->timeout : 0;
 		$uri_var  = var_export( $uri, true );
 		$user_var = var_export( $this->user, true );
 
@@ -167,13 +159,13 @@ class WP_CLI_Login {
 		add_action( 'parse_request', function () {
 			\$uri = \$_SERVER['REQUEST_URI'] ?? null;
 
-			if ( ! isset( \$uri ) || ! hash_equals( $uri_var, \$uri ) ) {
+			if ( \$uri === null || ! hash_equals( $uri_var, \$uri ) ) {
 				return;
 			}
 
 			@unlink( __FILE__ );
 
-			if ( time() > $timeout ) {
+			if ( $timeout && time() > $timeout ) {
 				wp_die( 'Login timed out.' );
 			}
 

@@ -1,7 +1,7 @@
 southan/wp-cli-login
 ====================
 
-Log in to WordPress admin
+Instant WordPress login as any user.
 
 
 
@@ -10,33 +10,28 @@ Quick links: [Using](#using) | [Installing](#installing) | [Contributing](#contr
 ## Using
 
 ~~~
-wp login [<target>...] [--user=<id|login|email>] [--timeout=<timeout>] [--generate] [--open] [--url=<url>]
+wp login [<target>...] [--user=<id|login|email>] [--timeout=<timeout>] [--open] [--url=<url>]
 ~~~
-
-Instant, automatic login to any WordPress that WP-CLI has access to.
-
-This command installs a self-destructing MU plugin that listens for a
-unique, secret URL and signs the requesting user into WordPresss.
 
 **OPTIONS**
 
 	[<target>...]
-		Log in to WP-CLI alias or remote WordPress (see global parameter --ssh).
+		WP-CLI alias, path, or SSH target (see global parameter --ssh). Defaults to current install.
 
 	[--user=<id|login|email>]
 		Log in as specific user. Defaults to first administrator.
 
 	[--timeout=<timeout>]
-		Default 30 seconds. Accepts time units e.g. 1d 6h 30m
-
-	[--generate]
-		Generate the login script (MU plugin) for manual installation.
+		Time until expiration in seconds or units e.g. 1d 6h 30m
+		---
+		default: 30
+		---
 
 	[--open]
-		Open the login URL in your system browser. Default true (unless --generate).
+		Automatically open the login URL in your system browser. Default true (unless --generate).
 
 	[--url=<url>]
-		Defaults to WordPress URL.
+		Use the <key> placeholder for exact control over the generated login URL.
 
 **EXAMPLES**
 
@@ -50,7 +45,7 @@ unique, secret URL and signs the requesting user into WordPresss.
     $ wp login @dev
 
     # Print login URL instead of opening it & set timeout to 5 minutes
-    $ wp login --no-open --timeout=5m
+    $ wp login --no-open --timeout=300
     https://example.com/login/ce24f50a0126d75694b3cf2dedb5a64d6f3636cb0ae3d08e2c8c509b511c7acc
 
     # Generate login script for manual installation
@@ -59,12 +54,12 @@ unique, secret URL and signs the requesting user into WordPresss.
     <?php
     ...
 
-    # Override URL if rewrite not supported (default login URL format)
+    # Use query string i.e. if permalinks not supported
     $ wp login --url='https://example.com/?login-key=<key>'
 
 ## Installing
 
-Installing this package requires WP-CLI v2.5 or greater. Update to the latest stable release with `wp cli update`.
+Installing this package requires WP-CLI v2.12 or greater. Update to the latest stable release with `wp cli update`.
 
 Once you've done so, you can install the latest stable version of this package with:
 

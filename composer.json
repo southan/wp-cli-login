@@ -1,19 +1,19 @@
 {
 	"name": "southan/wp-cli-login",
-	"description": "Log in to WordPress admin",
-	"type": "wp-cli-package",
-	"homepage": "https://github.com/southan/wp-cli-login",
+	"description": "Instant WordPress login as any user.",
 	"license": "GPL-3.0-or-later",
+	"type": "wp-cli-package",
 	"authors": [
 		{
 			"name": "Alex Southan",
 			"homepage": "https://southan.dev"
 		}
 	],
+	"homepage": "https://github.com/southan/wp-cli-login",
 	"require": {
 		"php": ">=8.0",
-		"wp-cli/wp-cli": "^2.5",
-		"southan/wp-cli": "dev-main"
+		"southan/wp-cli": "dev-main",
+		"wp-cli/wp-cli": "^2.12"
 	},
 	"autoload": {
 		"files": [
