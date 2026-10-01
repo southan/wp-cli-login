@@ -27,6 +27,9 @@ class WP_CLI_Login {
 	 * default: 30
 	 * ---
 	 *
+	 * [--generate]
+	 * : Generate the login script for manual installation (as MU plugin). Default false.
+	 *
 	 * [--open]
 	 * : Automatically open the login URL in your system browser. Default true (unless --generate).
 	 *
