@@ -53,7 +53,6 @@ class WP_CLI_Login {
 	 *
 	 *     # Generate login script for manual installation
 	 *     $ wp login --generate --url=https://example.com
-	 *     https://example.com/login/f4c42e9f5d854827bf47364d817025dc0da27b3c447bd70152de61d27234a9b3
 	 *     <?php
 	 *     ...
 	 *
@@ -131,7 +130,6 @@ class WP_CLI_Login {
 			$mu_plugin->slug = "login-$key";
 
 			if ( $generate ) {
-				WP_CLI::line( $url );
 				WP_CLI::line( $mu_plugin->generate( $code ) );
 
 			} elseif ( ! $mu_plugin->install( $code, $remote ) ) {
